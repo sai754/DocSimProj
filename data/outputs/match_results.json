@@ -1,0 +1,93 @@
+{
+  "job_id": "JD_001",
+  "job_title": "Senior Python Developer",
+  "total_profiles": 4,
+  "qualified_matches": 3,
+  "top_matches": 3,
+  "matches": [
+    {
+      "id": "profile_3",
+      "name": "JOHN DOE",
+      "email": "john.doe@email.com",
+      "phone": "(555) 123-4567",
+      "skills": [
+        "Python",
+        "Django",
+        "Flask",
+        "PostgreSQL",
+        "AWS",
+        "Docker",
+        "Kubernetes",
+        "Git",
+        "REST APIs",
+        "Redis",
+        "Celery"
+      ],
+      "experience": "7 years",
+      "education": "Bachelor of Science in Computer Science, University of Technology, 2017",
+      "summary": "7 years of professional software development experience",
+      "similarity_score": 0.3564624320417945
+    },
+    {
+      "id": "profile_2",
+      "name": "Jane Smith",
+      "email": "jane.smith@gmail.com",
+      "phone": "+1-555-987-6543",
+      "skills": [
+        "Python",
+        "JavaScript",
+        "TypeScript",
+        "React",
+        "Vue.js",
+        "HTML5",
+        "CSS3",
+        "SASS",
+        "Node.js",
+        "Express",
+        "Django",
+        "MongoDB",
+        "PostgreSQL",
+        "MySQL",
+        "Git",
+        "Docker",
+        "AWS",
+        "Jenkins"
+      ],
+      "experience": "5 years",
+      "education": "Master of Science in Software Engineering, Tech University, 2019",
+      "summary": "5 years of experience in full-stack web development with expertise in modern JavaScript frameworks and backend technologies.",
+      "similarity_score": 0.3252105863904677
+    },
+    {
+      "id": "profile_5",
+      "name": "Sarah Williams",
+      "email": "sarah.w@developer.com",
+      "phone": "555-321-9876",
+      "skills": [
+        "Python",
+        "Java",
+        "SQL",
+        "Django",
+        "Spring Boot",
+        "Flask",
+        "MySQL",
+        "PostgreSQL",
+        "Redis",
+        "Git",
+        "Docker",
+        "Postman",
+        "Swagger",
+        "AWS (EC2, RDS, S3)"
+      ],
+      "experience": "4 years",
+      "education": "B.S. Computer Science, University of California, 2020",
+      "summary": "Passionate backend developer with 4 years of experience building scalable web applications and APIs.",
+      "similarity_score": 0.310897688317172
+    }
+  ],
+  "timestamp": "2025-06-07T22:01:49.480012",
+  "processing_summary": {
+    "min_similarity_threshold": 0.3,
+    "top_candidates_limit": 3
+  }
+}

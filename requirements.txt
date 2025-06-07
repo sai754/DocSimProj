@@ -1,0 +1,8 @@
+azure-ai-inference
+azure-core
+scikit-learn
+fpdf2
+python-dotenv
+pdfplumber
+python-docx
+PyMuPDF
