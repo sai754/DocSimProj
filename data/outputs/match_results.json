@@ -1,7 +1,7 @@
 {
   "job_id": "JD_001",
   "job_title": "Senior Python Developer",
-  "total_profiles": 4,
+  "total_profiles": 5,
   "qualified_matches": 3,
   "top_matches": 3,
   "matches": [
@@ -85,7 +85,7 @@
       "similarity_score": 0.310897688317172
     }
   ],
-  "timestamp": "2025-06-07T22:01:49.480012",
+  "timestamp": "2025-06-07T22:40:05.639384",
   "processing_summary": {
     "min_similarity_threshold": 0.3,
     "top_candidates_limit": 3
