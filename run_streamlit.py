@@ -22,8 +22,8 @@ def main():
         
         subprocess.run([
             sys.executable, "-m", "streamlit", "run", "streamlit_app.py",
-            "--server.headless", "false",
-            "--server.port", "8501",
+            "--server.headless", "true",
+            "--server.port", "8000",
             "--browser.gatherUsageStats", "false"
         ])
         
