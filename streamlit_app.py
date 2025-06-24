@@ -12,6 +12,51 @@ from pathlib import Path
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, current_dir)
 
+# Streamlit configuration
+st.set_page_config(
+    page_title="Recruitment Matching System",
+    page_icon="🎯",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# Check configuration first
+try:
+    from config.settings import validate_config, AZURE_TOKEN, EMAIL_ADDRESS, EMAIL_PASSWORD
+    
+    # Validate configuration
+    missing_vars = validate_config()
+    if missing_vars:
+        st.error("⚠️ **Configuration Error**")
+        st.error("The following environment variables are missing or not set:")
+        for var in missing_vars:
+            st.error(f"• `{var}`")
+        
+        st.info("**For Azure Web App deployment:**")
+        st.code("""
+# Set these as Application Settings in Azure Portal:
+# Go to: Azure Portal → Your Web App → Configuration → Application Settings
+
+AZURE_OPEN_API = "your_azure_api_key_here"
+EMAIL_ADDRESS = "your_email@gmail.com" 
+EMAIL_PASSWORD = "your_gmail_app_password"
+        """)
+        
+        st.info("**For local development, create a `.env` file in your project root:**")
+        st.code("""
+AZURE_OPEN_API=your_azure_api_key_here
+EMAIL_ADDRESS=your_email@gmail.com
+EMAIL_PASSWORD=your_gmail_app_password
+        """)
+        
+        st.stop()
+
+except ImportError as e:
+    st.error(f"Import error: {e}")
+    st.error("Please check that all required modules are installed and available.")
+    st.stop()
+
+# Now import other modules
 try:
     from entities import JobDescription, Profile
     from services import RecruitmentMatchingService
@@ -20,14 +65,6 @@ except ImportError as e:
     st.error(f"Import error: {e}")
     st.error("Please check that all required modules are installed and available.")
     st.stop()
-
-# Streamlit configuration
-st.set_page_config(
-    page_title="Recruitment Matching System",
-    page_icon="🎯",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
 
 # Custom CSS
 st.markdown("""
@@ -67,6 +104,14 @@ st.markdown("""
     }
     .stAlert > div {
         padding: 1rem;
+    }
+    .config-status {
+        background-color: #d4edda;
+        border: 1px solid #c3e6cb;
+        color: #155724;
+        padding: 0.75rem;
+        border-radius: 0.25rem;
+        margin-bottom: 1rem;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -142,24 +187,29 @@ def main():
     # Main header
     st.markdown('<h1 class="main-header">🎯 Recruitment Matching System</h1>', unsafe_allow_html=True)
     
-    # Check for required environment variables
+    # Show configuration status
+    st.markdown("""
+    <div class="config-status">
+        ✅ <strong>Configuration Status:</strong> All required environment variables are properly configured.
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Test service initialization
     try:
-        # Test if we can import and initialize the service
         test_service = RecruitmentMatchingService()
+        st.success("🔧 Service initialized successfully!")
     except Exception as e:
-        st.error("⚠️ Configuration Error")
-        st.error("Please ensure all environment variables are set correctly in Streamlit Cloud secrets:")
-        st.code("""
-AZURE_OPEN_API = "your_azure_api_key"
-EMAIL_ADDRESS = "your_email@gmail.com"
-EMAIL_PASSWORD = "your_app_password"
-        """)
-        st.error(f"Error details: {e}")
+        st.error(f"⚠️ Service initialization failed: {e}")
+        st.error("Please check your Azure API configuration.")
         st.stop()
     
     # Sidebar for configuration
     with st.sidebar:
         st.header("⚙️ Configuration")
+        
+        # Show current environment
+        env_info = os.getenv('WEBSITE_SITE_NAME', 'Local Development')
+        st.info(f"Environment: {env_info}")
         
         # Similarity threshold
         similarity_threshold = st.slider(
