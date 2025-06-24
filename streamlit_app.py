@@ -8,14 +8,20 @@ from typing import List, Dict
 import sys
 from pathlib import Path
 
+# Add the current directory to the Python path
+current_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, current_dir)
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+try:
+    from entities import JobDescription, Profile
+    from services import RecruitmentMatchingService
+    from dao import CommunicationAgent
+except ImportError as e:
+    st.error(f"Import error: {e}")
+    st.error("Please check that all required modules are installed and available.")
+    st.stop()
 
-from entities import JobDescription, Profile
-from services import RecruitmentMatchingService
-from dao import CommunicationAgent
-
-
+# Streamlit configuration
 st.set_page_config(
     page_title="Recruitment Matching System",
     page_icon="🎯",
@@ -23,7 +29,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-
+# Custom CSS
 st.markdown("""
 <style>
     .main-header {
@@ -59,6 +65,9 @@ st.markdown("""
         color: #dc3545;
         font-weight: bold;
     }
+    .stAlert > div {
+        padding: 1rem;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -77,10 +86,17 @@ def save_uploaded_files(uploaded_files) -> List[str]:
     file_paths = []
     
     for uploaded_file in uploaded_files:
-        file_path = os.path.join(temp_dir, uploaded_file.name)
-        with open(file_path, "wb") as f:
-            f.write(uploaded_file.getbuffer())
-        file_paths.append(file_path)
+        # Ensure safe filename
+        safe_filename = "".join(c for c in uploaded_file.name if c.isalnum() or c in (' ', '.', '_', '-')).rstrip()
+        file_path = os.path.join(temp_dir, safe_filename)
+        
+        try:
+            with open(file_path, "wb") as f:
+                f.write(uploaded_file.getbuffer())
+            file_paths.append(file_path)
+        except Exception as e:
+            st.error(f"Error saving file {safe_filename}: {e}")
+            continue
     
     return file_paths
 
@@ -97,16 +113,26 @@ def display_candidate_card(candidate: Dict, rank: int):
     """Display a candidate card with styling"""
     score_class = get_score_class(candidate['similarity_score'])
     
+    # Safely handle potentially missing fields
+    name = candidate.get('name', 'N/A')
+    email = candidate.get('email', 'N/A')
+    phone = candidate.get('phone', 'N/A')
+    experience = candidate.get('experience', 'N/A')
+    education = candidate.get('education', 'N/A')
+    similarity_score = candidate.get('similarity_score', 0.0)
+    skills = candidate.get('skills', [])
+    summary = candidate.get('summary', 'N/A')
+    
     st.markdown(f"""
     <div class="candidate-card">
-        <h4>#{rank} - {candidate['name']}</h4>
-        <p><strong>Email:</strong> {candidate['email']}</p>
-        <p><strong>Phone:</strong> {candidate['phone']}</p>
-        <p><strong>Experience:</strong> {candidate['experience']}</p>
-        <p><strong>Education:</strong> {candidate['education']}</p>
-        <p><strong>Similarity Score:</strong> <span class="{score_class}">{candidate['similarity_score']:.3f}</span></p>
-        <p><strong>Skills:</strong> {', '.join(candidate['skills'])}</p>
-        <p><strong>Summary:</strong> {candidate['summary']}</p>
+        <h4>#{rank} - {name}</h4>
+        <p><strong>Email:</strong> {email}</p>
+        <p><strong>Phone:</strong> {phone}</p>
+        <p><strong>Experience:</strong> {experience}</p>
+        <p><strong>Education:</strong> {education}</p>
+        <p><strong>Similarity Score:</strong> <span class="{score_class}">{similarity_score:.3f}</span></p>
+        <p><strong>Skills:</strong> {', '.join(skills) if skills else 'N/A'}</p>
+        <p><strong>Summary:</strong> {summary}</p>
     </div>
     """, unsafe_allow_html=True)
 
@@ -115,6 +141,21 @@ def main():
     
     # Main header
     st.markdown('<h1 class="main-header">🎯 Recruitment Matching System</h1>', unsafe_allow_html=True)
+    
+    # Check for required environment variables
+    try:
+        # Test if we can import and initialize the service
+        test_service = RecruitmentMatchingService()
+    except Exception as e:
+        st.error("⚠️ Configuration Error")
+        st.error("Please ensure all environment variables are set correctly in Streamlit Cloud secrets:")
+        st.code("""
+AZURE_OPEN_API = "your_azure_api_key"
+EMAIL_ADDRESS = "your_email@gmail.com"
+EMAIL_PASSWORD = "your_app_password"
+        """)
+        st.error(f"Error details: {e}")
+        st.stop()
     
     # Sidebar for configuration
     with st.sidebar:
@@ -141,7 +182,7 @@ def main():
         
         st.divider()
         
-        
+        # Email configuration
         st.subheader("📧 Email Notifications")
         enable_email = st.checkbox("Enable Email Notifications")
         
@@ -149,7 +190,7 @@ def main():
             ar_email = st.text_input("AR Requestor Email", placeholder="ar@company.com")
             recruiter_email = st.text_input("Recruiter Email", placeholder="recruiter@company.com")
     
-    
+    # Main tabs
     tab1, tab2, tab3 = st.tabs(["📝 Job Description", "📄 Upload Resumes", "📊 Results"])
     
     with tab1:
@@ -214,17 +255,24 @@ Requirements:
     with tab2:
         st.markdown('<div class="section-header">Upload Resume Files</div>', unsafe_allow_html=True)
         
+        # File upload with better error handling
         uploaded_files = st.file_uploader(
             "Choose resume files",
             accept_multiple_files=True,
             type=['pdf', 'docx'],
-            help="Upload PDF or DOCX resume files"
+            help="Upload PDF or DOCX resume files (max 200MB per file)"
         )
         
         if uploaded_files:
             st.write(f"📁 {len(uploaded_files)} files uploaded:")
+            total_size = 0
             for file in uploaded_files:
-                st.write(f"• {file.name} ({file.size} bytes)")
+                file_size_mb = file.size / (1024 * 1024)
+                total_size += file_size_mb
+                st.write(f"• {file.name} ({file_size_mb:.1f} MB)")
+            
+            if total_size > 100:  # Warn if total size is large
+                st.warning(f"⚠️ Large total file size: {total_size:.1f} MB. Processing may take longer.")
         
         if st.button("🚀 Start Matching Process", type="primary", disabled=not uploaded_files):
             if not st.session_state.job_description:
@@ -235,31 +283,37 @@ Requirements:
                 st.error("❌ Please upload resume files first!")
                 return
             
-            
+            # Progress tracking
             progress_bar = st.progress(0)
             status_text = st.empty()
             
             try:
-                
+                # Save uploaded files
                 status_text.text("💾 Saving uploaded files...")
                 progress_bar.progress(10)
                 file_paths = save_uploaded_files(uploaded_files)
                 
+                if not file_paths:
+                    st.error("❌ Failed to save uploaded files!")
+                    return
                 
+                # Initialize matching service
                 status_text.text("🔧 Initializing matching service...")
                 progress_bar.progress(20)
                 matching_service = RecruitmentMatchingService()
                 
+                # Set similarity threshold
                 matching_service.ranking_agent.min_similarity_threshold = similarity_threshold
                 
-                
+                # Run matching process
                 status_text.text("🔍 Processing resumes and matching...")
                 progress_bar.progress(50)
                 
-                result = matching_service.run_matching_process(
-                    st.session_state.job_description, 
-                    file_paths
-                )
+                with st.spinner("Processing resumes..."):
+                    result = matching_service.run_matching_process(
+                        st.session_state.job_description, 
+                        file_paths
+                    )
                 
                 progress_bar.progress(80)
                 
@@ -288,10 +342,14 @@ Requirements:
                     except:
                         pass
                 
-                st.success(f"🎉 Found {len(result['matches'])} top matches out of {result['total_profiles']} profiles!")
+                st.success(f"🎉 Found {len(result.get('matches', []))} top matches out of {result.get('total_profiles', 0)} profiles!")
+                
+                # Auto-switch to results tab
+                st.info("👉 Check the 'Results' tab to view the matching candidates!")
                 
             except Exception as e:
-                st.error(f"❌ An error occurred: {str(e)}")
+                st.error(f"❌ An error occurred during processing: {str(e)}")
+                st.error("Please check your configuration and try again.")
                 progress_bar.empty()
                 status_text.empty()
     
@@ -305,19 +363,23 @@ Requirements:
             col1, col2, col3, col4 = st.columns(4)
             
             with col1:
-                st.metric("Total Profiles", result['total_profiles'])
+                st.metric("Total Profiles", result.get('total_profiles', 0))
             
             with col2:
-                st.metric("Qualified Matches", result['qualified_matches'])
+                st.metric("Qualified Matches", result.get('qualified_matches', 0))
             
             with col3:
-                st.metric("Top Matches", result['top_matches'])
+                st.metric("Top Matches", result.get('top_matches', 0))
             
             with col4:
-                avg_score = sum(match['similarity_score'] for match in result['matches']) / len(result['matches']) if result['matches'] else 0
-                st.metric("Avg. Score", f"{avg_score:.3f}")
+                matches = result.get('matches', [])
+                if matches:
+                    avg_score = sum(match.get('similarity_score', 0) for match in matches) / len(matches)
+                    st.metric("Avg. Score", f"{avg_score:.3f}")
+                else:
+                    st.metric("Avg. Score", "N/A")
             
-            if result['matches']:
+            if result.get('matches'):
                 st.subheader("🏆 Top Candidates")
                 
                 # Display candidates
@@ -331,24 +393,30 @@ Requirements:
                 
                 with col1:
                     # CSV download
-                    df = pd.DataFrame(result['matches'])
-                    csv = df.to_csv(index=False)
-                    st.download_button(
-                        label="📊 Download CSV",
-                        data=csv,
-                        file_name=f"candidates_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
-                        mime="text/csv"
-                    )
+                    try:
+                        df = pd.DataFrame(result['matches'])
+                        csv = df.to_csv(index=False)
+                        st.download_button(
+                            label="📊 Download CSV",
+                            data=csv,
+                            file_name=f"candidates_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                            mime="text/csv"
+                        )
+                    except Exception as e:
+                        st.error(f"Error creating CSV: {e}")
                 
                 with col2:
                     # JSON download
-                    json_str = json.dumps(result, indent=2)
-                    st.download_button(
-                        label="📋 Download JSON",
-                        data=json_str,
-                        file_name=f"match_results_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
-                        mime="application/json"
-                    )
+                    try:
+                        json_str = json.dumps(result, indent=2)
+                        st.download_button(
+                            label="📋 Download JSON",
+                            data=json_str,
+                            file_name=f"match_results_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
+                            mime="application/json"
+                        )
+                    except Exception as e:
+                        st.error(f"Error creating JSON: {e}")
                 
                 # Detailed view toggle
                 if st.checkbox("📋 Show Detailed JSON Results"):
@@ -356,6 +424,10 @@ Requirements:
             
             else:
                 st.warning("⚠️ No qualified candidates found. Try lowering the similarity threshold.")
+                
+                # Show debug info if available
+                if 'error' in result:
+                    st.error(f"Error: {result['error']}")
         
         else:
             st.info("👆 Upload resumes and run the matching process to see results here.")
