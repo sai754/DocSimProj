@@ -29,6 +29,9 @@ file_path = Path(__file__).parent / "hashed_pw.pkl"
 with file_path.open("rb") as file:
     hashed_passwords = pickle.load(file)
 
+st.markdown('<h1 class="main-header">🎯 Recruitment Matching System</h1>', unsafe_allow_html=True)
+
+
 authenticator = stauth.Authenticate(names, usernames, hashed_passwords,
                                     "login_docsim", "ajbvkjadsb", cookie_expiry_days=1)
 
