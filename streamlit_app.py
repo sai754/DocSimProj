@@ -172,8 +172,6 @@ if authentication_status :
     def main():
         initialize_session_state()
         
-        st.markdown('<h1 class="main-header">🎯 Recruitment Matching System</h1>', unsafe_allow_html=True)
-        
         st.markdown("""
         <div class="config-status">
             ✅ <strong>Configuration Status:</strong> All required environment variables are properly configured.
