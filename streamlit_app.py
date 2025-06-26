@@ -177,7 +177,7 @@ if authentication_status :
         </div>
         """, unsafe_allow_html=True)
         
-        authenticator.logout("Logout","main")
+        authenticator.logout("Logout","sidebar")
         st.sidebar.title(f"Welcome {name}")
         try:
             test_service = RecruitmentMatchingService()
